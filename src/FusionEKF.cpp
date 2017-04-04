@@ -38,7 +38,19 @@ FusionEKF::FusionEKF() {
     * Finish initializing the FusionEKF.
     * Set the process and measurement noises
   */
-
+    ekf_.Q_ = MatrixXd(4, 4);
+    ekf_.F_ = MatrixXd(4, 4);
+    ekf_.P_ = MatrixXd(4, 4);
+    
+    //state covariance matrix P
+	ekf_.P_ << 1, 0, 0, 0,
+			  0, 1, 0, 0,
+			  0, 0, 1000, 0,
+			  0, 0, 0, 1000;
+    ekf_.F_ << 1, 0, 1, 0,
+            0, 1, 0, 1,
+            0, 0, 1, 0,
+            0, 0, 0, 1;
 }
 
 /**
@@ -47,8 +59,6 @@ FusionEKF::FusionEKF() {
 FusionEKF::~FusionEKF() {}
 
 void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
-
-   std::cout << "FusionEKF::ProcessMeasurement start" << std::endl;
 
   /*****************************************************************************
    *  Initialization
@@ -63,16 +73,10 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     // first measurement
     cout << "EKF: " << endl;
     ekf_.x_ = VectorXd(4);
-    ekf_.x_ << 1, 1, 1, 1;
+    //ekf_.x_ << 1, 1, 1, 1;
 
-    ekf_.Q_ = MatrixXd(4, 4);
-    ekf_.F_ = MatrixXd(4, 4);
-    ekf_.P_ = MatrixXd(4, 4);
 
-    ekf_.F_ << 1, 0, 1, 0,
-            0, 1, 0, 1,
-            0, 0, 1, 0,
-            0, 0, 0, 1;
+
 
 	previous_timestamp_ = measurement_pack.timestamp_;
 
@@ -103,8 +107,6 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
   /*****************************************************************************
    *  Prediction
    ****************************************************************************/
-   std::cout << "FusionEKF::ProcessMeasurement before prediction todo" << std::endl;
-
   /**
    TODO:
      * Update the state transition matrix F according to the new elapsed time.
@@ -123,26 +125,22 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 	float dt_3 = dt_2 * dt;
 	float dt_4 = dt_3 * dt;
 
-
 	//Modify the F matrix so that the time is integrated
 	ekf_.F_(0, 2) = dt;
 	ekf_.F_(1, 3) = dt;
 
 	//set the process covariance matrix Q
-	ekf_.Q_ <<  dt_4/4*noise_ax, 0, dt_3/2*noise_ax, 0,
-			   0, dt_4/4*noise_ay, 0, dt_3/2*noise_ay,
-			   dt_3/2*noise_ax, 0, dt_2*noise_ax, 0,
-			   0, dt_3/2*noise_ay, 0, dt_2*noise_ay;
+	ekf_.Q_ <<  dt_4/4.0f*noise_ax, 0, dt_3/2.0f*noise_ax, 0,
+			   0, dt_4/4.0f*noise_ay, 0, dt_3/2.0f*noise_ay,
+			   dt_3/2.0f*noise_ax, 0, dt_2*noise_ax, 0,
+			   0, dt_3/2.0f*noise_ay, 0, dt_2*noise_ay;
 
-	//state covariance matrix P
-	ekf_.P_ << 1, 0, 0, 0,
-			  0, 1, 0, 0,
-			  0, 0, 1000, 0,
-			  0, 0, 0, 1000;
+
 
 
 
    ekf_.Predict();
+
 
   /*****************************************************************************
    *  Update
@@ -156,7 +154,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
   if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
     // Radar updates
-       std::cout << "FusionEKF::ProcessMeasurement before CalculateJacobian" << std::endl;
+      // std::cout << "FusionEKF::ProcessMeasurement before CalculateJacobian" << std::endl;
 
     Hj_= tools.CalculateJacobian(ekf_.x_);
     if (!Hj_.isZero()){
@@ -167,7 +165,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
   } else {
     // Laser updates
     ekf_.Init(ekf_.x_ , ekf_.P_ , ekf_.F_ , H_laser_, R_laser_, ekf_.Q_ );
-            std::cout << "FusionEKF::ProcessMeasurement before Update" << std::endl;
+        //    std::cout << "FusionEKF::ProcessMeasurement before Update" << std::endl;
    ekf_.Update(measurement_pack.raw_measurements_);
 
   }
