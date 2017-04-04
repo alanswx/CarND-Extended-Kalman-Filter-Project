@@ -24,7 +24,12 @@ void KalmanFilter::Predict() {
 	P_ = F_ * P_ * Ft + Q_;
 }
 
+/*
 
+This function is used to factor out the code that is the same in
+the laser and radar case.
+
+*/
 void KalmanFilter::UpdateInternal(const VectorXd &z,const VectorXd &y)
 {
 	MatrixXd Ht = H_.transpose();
@@ -51,7 +56,11 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
     double vy = x_[3];
 
 	double pxpy=sqrt(px*px+py*py);
-  	if (pxpy<=0.001) std::cout << "ERROR" << std::endl;
+  	if (pxpy<=0.001)
+  	{
+  	  std::cout << "ERROR" << std::endl;
+  	  pxpy=0.00001;
+  	}
     VectorXd hxprime = VectorXd(3);
 	hxprime(0) = pxpy;
 	hxprime(1) = atan2(py,px);
